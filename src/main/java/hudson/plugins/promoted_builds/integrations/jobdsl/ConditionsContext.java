@@ -3,7 +3,9 @@ package hudson.plugins.promoted_builds.integrations.jobdsl;
 import groovy.lang.Closure;
 import groovy.util.Node;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javaposse.jobdsl.dsl.Context;
@@ -51,6 +53,20 @@ public class ConditionsContext implements Context {
 	
 	// Upstream Build Condition
 	private boolean isUpstreamPromotion = false;
+
+	// Groovy condition
+	private boolean isGroovy = false;
+
+	private String script = null;
+
+	private String unmetQualificationLabel = null;
+
+	private String metQualificationLabel = null;
+
+	List<String> classpathEntries = new ArrayList<>();
+
+	private boolean sandbox = false;
+
 	
 	private String promotionNames = null;
 
@@ -107,6 +123,28 @@ public class ConditionsContext implements Context {
 	public void upstream(String promotionNames) {
 		isUpstreamPromotion = true;
 		this.promotionNames = promotionNames;
+	}
+
+	public void groovy( String script, String unmetQualificationLabel, String metQualificationLabel, Closure<?> scriptClosure) {
+		isGroovy = true;
+
+		this.script = script;
+		this.unmetQualificationLabel = unmetQualificationLabel;
+		this.metQualificationLabel = metQualificationLabel;
+
+		groovyScript(scriptClosure);
+	}
+
+	public void groovyScript(Closure<?> scriptClosure) {
+		GroovyScriptContext grovvyScriptContext = dslEnvironment.createContext(GroovyScriptContext.class);
+		executeInContext(scriptClosure, grovvyScriptContext);
+
+		this.sandbox = grovvyScriptContext.isSandbox();
+		this.classpathEntries = grovvyScriptContext.getClassPathEntries();
+	}
+
+	public void script(String script) {
+		this.script = script;
 	}
 
 	public Map<String, Node> getParams() {
@@ -168,5 +206,25 @@ public class ConditionsContext implements Context {
 	public String getPromotionNames() {
 		return promotionNames;
 	}
+
+	public boolean isGroovy() { return isGroovy; }
+
+	public String getUnmetQualificationLabel() {
+		return unmetQualificationLabel;
+	}
+
+	public String getMetQualificationLabel() {
+		return metQualificationLabel;
+	}
+
+	public List<String> getClassPathEntries() {
+		return classpathEntries;
+	}
+
+	public String getScript() {
+		return script;
+	}
+
+	public boolean isSandbox() { return sandbox; }
 
 }

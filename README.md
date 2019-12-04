@@ -141,6 +141,10 @@ freeStyleJob(String jobname) {
           selfPromotion(boolean evenIfUnstable = true)
           parameterizedSelfPromotion(boolean evenIfUnstable = true, String parameterName, String parameterValue)
           releaseBuild()
+          groovy(String script, String unmetQualificationLabel,String metQualificationLabel){
+            sandbox(boolean sandbox)
+            classpaths(String... classpaths)
+          }
           downstream(boolean evenIfUnstable = true, String jobs)
           upstream(String promotionNames)
           manual(String user){

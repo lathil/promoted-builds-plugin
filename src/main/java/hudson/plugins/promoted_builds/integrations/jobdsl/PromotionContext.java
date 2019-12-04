@@ -7,7 +7,9 @@ import hudson.plugins.promoted_builds.conditions.DownstreamPassCondition;
 import hudson.plugins.promoted_builds.conditions.ParameterizedSelfPromotionCondition;
 import hudson.plugins.promoted_builds.conditions.SelfPromotionCondition;
 import hudson.plugins.promoted_builds.conditions.UpstreamPromotionCondition;
+import hudson.plugins.promoted_builds.conditions.GroovyCondition;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,6 +17,8 @@ import javaposse.jobdsl.dsl.Context;
 import javaposse.jobdsl.dsl.helpers.step.StepContext;
 import javaposse.jobdsl.dsl.helpers.wrapper.WrapperContext;
 import javaposse.jobdsl.plugin.DslEnvironment;
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
+import org.jenkinsci.plugins.scriptsecurity.scripts.ClasspathEntry;
 
 import static javaposse.jobdsl.plugin.ContextExtensionPoint.executeInContext;
 
@@ -76,6 +80,19 @@ class PromotionContext implements Context {
         }
         if (conditionContext.isUpstreamPromotion()) {
             conditions.add(new UpstreamPromotionCondition(conditionContext.getPromotionNames()));
+        }
+        if (conditionContext.isGroovy()) {
+            List<ClasspathEntry> classPathEntries = new ArrayList<>();
+            conditionContext.getClassPathEntries().forEach( it ->  {
+                try {
+                    ClasspathEntry classPathEntry = new ClasspathEntry(it);
+                    classPathEntries.add(classPathEntry);
+                } catch (MalformedURLException ex) {
+                    throw new javaposse.jobdsl.dsl.DslException(ex);
+                }
+            });
+            SecureGroovyScript groovyScript = new SecureGroovyScript( conditionContext.getScript(), conditionContext.isSandbox(), classPathEntries);
+            conditions.add( new GroovyCondition(groovyScript, conditionContext.getUnmetQualificationLabel(), conditionContext.getMetQualificationLabel()));
         }
     }
 

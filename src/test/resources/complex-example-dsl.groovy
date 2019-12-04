@@ -54,6 +54,35 @@ freeStyleJob('test-job-complex') {
                     }
                 }
             }
+            promotion {
+              name("Integration")
+              icon("star-gold")
+              restrict('slave2')
+              conditions {
+                  releaseBuild()
+                  groovy("def test = 'test'", 'unmet','met'){
+                      sandbox(false)
+                  }
+                  manual('testuser')
+                  upstream("Test")
+              }
+              actions {
+                  downstreamParameterized {
+                      trigger("deploy-application") {
+                          block {
+                              buildStepFailure('FAILURE')
+                              failure('FAILURE')
+                              unstable('UNSTABLE')
+                          }
+                          parameters {
+                              predefinedProp("ENVIRONMENT","integration-server")
+                              predefinedProp("APPLICATION_NAME", "\${PROMOTED_JOB_FULL_NAME}")
+                              predefinedProp("BUILD_ID","\${PROMOTED_NUMBER}")
+                          }
+                      }
+                  }
+              }
+            }
         }
     }
 }
